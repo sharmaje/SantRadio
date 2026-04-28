@@ -1,0 +1,181 @@
+<!DOCTYPE HTML>
+<!--
+    Identity by HTML5 UP
+    html5up.net | @n33co
+    Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+    <head>
+        
+        <title>Sant Radio</title>
+        
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <!--[if lte IE 8]><script src="assets/js/html5shiv.js"></script><![endif]-->
+        <link rel="stylesheet" href="assets/css/main.css" />
+        <!--[if lte IE 9]><link rel="stylesheet" href="assets/css/ie9.css" /><![endif]-->
+        <!--[if lte IE 8]><link rel="stylesheet" href="assets/css/ie8.css" /><![endif]-->
+        <noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+        
+    </head>
+    <body class="is-loading">
+
+        <!-- Wrapper -->
+            <div id="wrapper">
+
+                <!-- Main -->
+                    <section id="main">
+                        
+                        <header>
+                            
+                            <span class="avatar">
+                                <img src="images/santradio.jpg" alt="Jai Sant Ki" />
+                            </span>
+                            
+
+                            
+                            <h1>Sant Radio</h1>
+                            <p>Stay connected to sant, wherever you are in the world</p>
+                            <div style="padding: 20px; border-radius: 12px; border: 2px solid #ffd700; text-align: center; font-family: sans-serif; box-shadow: 0 5px 15px rgba(0,0,0,0.1); background: #fff;">
+    <h3 id="radio-status" style="margin: 0 0 10px 0; color: #b8860b;">Sant Nenu Ram Radio</h3>
+    <div id="track-name" style="font-size: 14px; margin-bottom: 15px; font-weight: bold; color: #333;">Click "Start" to Listen</div>
+    
+    <audio id="main-player" preload="auto" style="width: 100%; height: 40px; border-radius: 8px;"></audio>
+    
+    <button id="start-btn" style="margin-top: 15px; padding: 10px 20px; background: #ffd700; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: #b8860b;">Start Radio</button>
+    
+    <div id="debug-info" style="font-size: 10px; color: #ccc; margin-top: 10px;"></div>
+</div>
+
+<script>
+(function() {
+    // IMPORTANT: Make sure this CSV is uploaded to a public URL (like GitHub Pages or a public server)
+    const csvUrl = 'Sant Bhajans List.csv'; 
+    const player = document.getElementById('main-player');
+    const status = document.getElementById('radio-status');
+    const trackName = document.getElementById('track-name');
+    const startBtn = document.getElementById('start-btn');
+
+    let playlist = [];
+
+    async function initRadio() {
+        try {
+            const response = await fetch(csvUrl);
+            if (!response.ok) throw new Error("File access denied");
+            const text = await response.text();
+            
+            const rows = text.split(/\r?\n/).filter(line => line.trim() !== "");
+            for(let i = 1; i < rows.length; i++) {
+                const cols = rows[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                if(cols.length >= 2) {
+                    let title = cols[0].replace(/^"|"$/g, '').trim();
+                    let url = cols[1].replace(/^"|"$/g, '').trim();
+                    if(url.startsWith('http')) {
+                        playlist.push({ title, url });
+                    }
+                }
+            }
+
+            if(playlist.length === 0) {
+                trackName.innerText = "Error: No audio links found.";
+                return;
+            }
+
+            startBtn.addEventListener('click', () => {
+                playRandom();
+                startBtn.style.display = 'none'; // Hide button after start
+                player.setAttribute('controls', 'true'); // Show controls after start
+            });
+
+        } catch (err) {
+            trackName.innerText = "Connection failed. Please check file access.";
+            console.error("Radio Error:", err);
+        }
+    }
+
+    function playRandom() {
+        const track = playlist[Math.floor(Math.random() * playlist.length)];
+        trackName.innerText = "Playing: " + track.title;
+        player.src = track.url;
+        player.load();
+        
+        let playPromise = player.play();
+        if (playPromise !== undefined) {
+            playPromise.then(_ => {
+                status.innerText = "● Live Radio";
+            }).catch(error => {
+                status.innerText = "Playback failed. Click Play.";
+                console.log("Autoplay blocked");
+            });
+        }
+    }
+
+    player.onended = playRandom;
+    initRadio();
+})();
+</script>
+                        </header>
+                        <hr />
+                        <div style="background: #fdfaf0; padding: 10px 20px; border-radius: 50px; display: inline-block; border: 1px solid #d4af37; font-family: sans-serif;">
+    <span style="color: #2ecc71; font-size: 18px;">●</span> 
+    <span style="font-weight: bold; color: #333;">Online: 
+        <script type="text/javascript" src="https://www.free-counters.org/count/as9d"></script>
+    </span>
+<div style="text-align: center; font-family: sans-serif;">
+    <div style="background: #333; color: #fff; display: inline-block; padding: 5px 15px; border-radius: 5px; font-weight: bold; letter-spacing: 2px;">
+        <a href="https://www.hitwebcounter.com" target="_blank">
+        <img src="https://hitwebcounter.com/counter/counter.php?page=9456732&style=0005&nbdigits=5&type=page&initCount=0" title="Free Counter" Alt="web counter" border="0" /></a>                                    
+    </div>
+    <p style="font-size: 11px; color: #666; margin-top: 5px;">Total Blessed Listeners</p>
+</div></div>
+                        
+                        <p>Sant Nenu Ram Sahab always guided us toward the path of love and service to humanity. SantRadio is a small effort to honor his memory and follow his teachings. Our goal is to provide a space where you can stay connected to his remembrance through bhajans and satsang at all times. This radio is dedicated to the entire community (Sangat) looking to nourish their soul with the Master&#39;s wisdom.</p>
+                        <hr />
+                        
+
+                        
+                        <p>
+                            Sant Sharomani NenuRam Aashram Islamkot Distt: Tharparkar Sindh
+                             | +923003021315 
+                        </p>
+                        
+
+                        <footer>
+                            
+                            <ul class="icons">
+                                
+                                <li><a href="mailto:sharmajelinks%40gmail.com" class="fa-envelope" title="Email">Email</a></li>
+                                <li><a href="https://instagram.com/santnenuram" class="fa-instagram" target="_blank" title="Instagram">Instagram</a></li>
+                                <li><a href="https://www.facebook.com/SantNenuRamOnlineAashram" class="fa-facebook" target="_blank" title="Facebook">Facebook</a></li>
+                                <li><a href="https://www.tiktok.com/@sant.bhajans" class="fa-brands fa-tiktok" target="_blank" title="TikTok">TikTok</a></li>
+                                <li><a href="https://www.youtube.com/@SantBhajans" class="fa-youtube" target="_blank"  title="YouTube">YouTube</a></li>
+                                
+                            </ul>
+                            
+                        </footer>
+                    </section>
+
+                <!-- Footer -->
+                    <footer id="footer">
+                        <ul class="copyright">
+                            
+                            <li>&copy; Sant Radio</li>
+                            
+                            <li>Design: <a href="//html5up.net">HTML5 UP</a></li>
+                        </ul>
+                    </footer>
+
+            </div>
+
+        <!-- Scripts -->
+            <!--[if lte IE 8]><script src="assets/js/respond.min.js"></script><![endif]-->
+            <script>
+                if ('addEventListener' in window) {
+                    window.addEventListener('load', function() { document.body.className = document.body.className.replace(/\bis-loading\b/, ''); });
+                    document.body.className += (navigator.userAgent.match(/(MSIE|rv:11\.0)/) ? ' is-ie' : '');
+                }
+            </script>
+
+            
+    </body>
+</html>
