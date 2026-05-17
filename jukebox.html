@@ -81,146 +81,134 @@
     </main>
 
     <script>
-        // GitHub Raw URL configuration
-        const csvUrl = 'SxVxNdb.csv';
+       // Updated CDN link for zero CORS errors
+const csvUrl = 'https://cdn.jsdelivr.net/gh/sharmaje/SantRadio@main/SxVxNdb.csv';
+
+let playlist = [];
+let currentTrackIndex = 0;
+
+const audio = document.getElementById('audio-player');
+const playBtn = document.getElementById('play-btn');
+const prevBtn = document.getElementById('prev-btn');
+const nextBtn = document.getElementById('next-btn');
+const progress = document.getElementById('progress');
+const currentT = document.getElementById('current');
+const durationT = document.getElementById('duration');
+const trackTitle = document.getElementById('title');
+const statusMsg = document.getElementById('status-msg');
+
+async function loadCSVPlaylist() {
+    try {
+        statusMsg.innerText = "Connecting to SantRadio database...";
+        const response = await fetch(csvUrl);
+        if (!response.ok) throw new Error('Network response structure issue');
+        const data = await response.text();
         
-        let playlist = [];
-        let currentTrackIndex = 0;
+        const lines = data.split('\n');
+        playlist = [];
 
-        const audio = document.getElementById('audio-player');
-        const playBtn = document.getElementById('play-btn');
-        const prevBtn = document.getElementById('prev-btn');
-        const nextBtn = document.getElementById('next-btn');
-        const progress = document.getElementById('progress');
-        const currentT = document.getElementById('current');
-        const durationT = document.getElementById('duration');
-        const trackTitle = document.getElementById('title');
-        const statusMsg = document.getElementById('status-msg');
+        // Parsing lines safely
+        for (let i = 0; i < lines.length; i++) {
+            const row = lines[i].trim();
+            if (row) {
+                const columns = row.split(',');
+                let title = `Track ${i + 1}`;
+                let url = columns[0].trim();
 
-        // 1. Fetch and Parse CSV File from GitHub
-        async function loadCSVPlaylist() {
-            try {
-                const response = await fetch(csvUrl);
-                if (!response.ok) throw new Error('Network response structure issue');
-                const data = await response.text();
+                if (columns.length > 1) {
+                    title = columns[0].trim().replace(/^"|"$/g, '');
+                    url = columns[1].trim().replace(/^"|"$/g, '');
+                }
                 
-                // Splitting CSV rows
-                const lines = data.split('\n');
-                playlist = [];
-
-                for (let i = 1; i < lines.length; i++) { // Skipping header row
-                    const row = lines[i].trim();
-                    if (row) {
-                        // Assuming CSV format: Title, URL or just URLs. 
-                        // Hum handle kar rahe hain agar single URL column ho ya comma separated text.
-                        const columns = row.split(',');
-                        let title = `Track ${i}`;
-                        let url = columns[0].trim();
-
-                        if (columns.length > 1) {
-                            title = columns[0].trim().replace(/^"|"$/g, ''); // Remove quotes if any
-                            url = columns[1].trim().replace(/^"|"$/g, '');
-                        }
-                        
-                        // Validating stream or mp3 link extension placeholder
-                        if (url.startsWith('http')) {
-                            playlist.push({ title: title, url: url });
-                        }
-                    }
+                // GitHub preview links ko automatic streamable raw format mein badalna
+                if (url.includes('github.com') && url.includes('/blob/')) {
+                    url = url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
                 }
 
-                if (playlist.length > 0) {
-                    statusMsg.innerText = `Loaded ${playlist.length} tracks successfully.`;
-                    loadTrack(currentTrackIndex);
-                } else {
-                    trackTitle.innerText = "No playable audio links found";
-                    statusMsg.innerText = "Check CSV entries.";
+                if (url.startsWith('http')) {
+                    playlist.push({ title: title, url: url });
                 }
-            } catch (error) {
-                console.error("Error loading CSV:", error);
-                trackTitle.innerText = "Failed to load playlist";
-                statusMsg.innerText = "Error syncing with GitHub repository.";
             }
         }
 
-        // 2. Load Track Function
-        function loadTrack(index) {
-            if (playlist.length === 0) return;
-            currentTrackIndex = index;
-            
-            audio.src = playlist[index].url;
-            trackTitle.innerText = playlist[index].title;
-            
-            progress.value = 0;
-            currentT.innerText = "0:00";
-            durationT.innerText = "0:00";
-        }
-
-        // 3. Play/Pause Controller
-        function togglePlay() {
-            if (playlist.length === 0) return;
-            if (audio.paused) {
-                audio.play().catch(err => console.log("Playback interaction trigger saved: ", err));
-                playBtn.innerText = '⏸';
-            } else {
-                audio.pause();
-                playBtn.innerText = '▶';
-            }
-        }
-
-        playBtn.addEventListener('click', togglePlay);
-
-        // 4. Next Track (Continuous Engine)
-        function nextTrack() {
-            if (playlist.length === 0) return;
-            currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
+        if (playlist.length > 0) {
+            statusMsg.innerText = `Online: ${playlist.length} Tracks Ready.`;
             loadTrack(currentTrackIndex);
-            audio.play().catch(() => {});
-            playBtn.innerText = '⏸';
+        } else {
+            trackTitle.innerText = "No links detected";
+            statusMsg.innerText = "Please check your SxVxNdb.csv file entries.";
         }
+    } catch (error) {
+        console.error("Error:", error);
+        trackTitle.innerText = "Sync Error";
+        statusMsg.innerText = "Failed to fetch CSV. Check internet or bypass rules.";
+    }
+}
 
-        // 5. Previous Track
-        function prevTrack() {
-            if (playlist.length === 0) return;
-            currentTrackIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
-            loadTrack(currentTrackIndex);
-            audio.play().catch(() => {});
-            playBtn.innerText = '⏸';
-        }
+function loadTrack(index) {
+    if (playlist.length === 0) return;
+    currentTrackIndex = index;
+    audio.src = playlist[index].url;
+    trackTitle.innerText = playlist[index].title;
+    audio.load(); // Reload audio engine for new source
+}
 
-        nextBtn.addEventListener('click', nextTrack);
-        prevBtn.addEventListener('click', prevTrack);
-
-        // 6. Audio Ended Event Listener (Continuous loop automation)
-        audio.addEventListener('ended', () => {
-            statusMsg.innerText = "Transitioning to next continuous track...";
-            nextTrack();
+function togglePlay() {
+    if (playlist.length === 0) return;
+    if (audio.paused) {
+        audio.play().catch(err => {
+            statusMsg.innerText = "Click anywhere on page to permit audio.";
         });
+        playBtn.innerText = '⏸';
+    } else {
+        audio.pause();
+        playBtn.innerText = '▶';
+    }
+}
 
-        // Update Progress Bar & Timestamps
-        audio.addEventListener('timeupdate', () => {
-            if (audio.duration) {
-                progress.value = (audio.currentTime / audio.duration) * 100;
-                
-                let mins = Math.floor(audio.currentTime / 60);
-                let secs = Math.floor(audio.currentTime % 60);
-                currentT.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+playBtn.addEventListener('click', togglePlay);
 
-                let dmins = Math.floor(audio.duration / 60);
-                let dsecs = Math.floor(audio.duration % 60);
-                durationT.innerText = `${dmins}:${dsecs < 10 ? '0' : ''}${dsecs}`;
-            }
-        });
+function nextTrack() {
+    if (playlist.length === 0) return;
+    currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
+    loadTrack(currentTrackIndex);
+    audio.play().catch(() => {});
+    playBtn.innerText = '⏸';
+}
 
-        // Scrubbing interface logic
-        progress.addEventListener('input', () => {
-            if (audio.duration) {
-                audio.currentTime = (progress.value / 100) * audio.duration;
-            }
-        });
+function prevTrack() {
+    if (playlist.length === 0) return;
+    currentTrackIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
+    loadTrack(currentTrackIndex);
+    audio.play().catch(() => {});
+    playBtn.innerText = '⏸';
+}
 
-        // Initialize CSV process trigger on windows load
-        window.onload = loadCSVPlaylist;
+nextBtn.addEventListener('click', nextTrack);
+prevBtn.addEventListener('click', prevTrack);
+
+audio.addEventListener('ended', nextTrack);
+
+audio.addEventListener('timeupdate', () => {
+    if (audio.duration) {
+        progress.value = (audio.currentTime / audio.duration) * 100;
+        let mins = Math.floor(audio.currentTime / 60);
+        let secs = Math.floor(audio.currentTime % 60);
+        currentT.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+        let dmins = Math.floor(audio.duration / 60);
+        let dsecs = Math.floor(audio.duration % 60);
+        durationT.innerText = `${dmins}:${dsecs < 10 ? '0' : ''}${dsecs}`;
+    }
+});
+
+progress.addEventListener('input', () => {
+    if (audio.duration) {
+        audio.currentTime = (progress.value / 100) * audio.duration;
+    }
+});
+
+window.onload = loadCSVPlaylist;
     </script>
 </body>
 </html>
