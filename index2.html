@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jukebox - Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #0c0c1e; color: #fff; display: flex; min-height: 100vh; overflow-x: hidden; }
+        
+        /* Sidebar Navigation */
+        .sidebar { width: 250px; background: rgba(15, 15, 35, 0.9); border-right: 1px solid rgba(255,255,255,0.1); padding: 30px 20px; display: flex; flex-direction: column; gap: 30px; }
+        .logo { font-size: 24px; font-weight: bold; color: #1db954; letter-spacing: 1px; display: flex; align-items: center; gap: 10px; }
+        .nav-links { list-style: none; display: flex; flex-direction: column; gap: 15px; }
+        .nav-links a { color: #b3b3b3; text-decoration: none; font-size: 16px; display: flex; align-items: center; gap: 15px; padding: 10px; border-radius: 8px; transition: 0.3s; }
+        .nav-links a:hover, .nav-links a.active { color: #fff; background: rgba(29, 185, 84, 0.2); border-left: 4px solid #1db954; }
+
+        /* Main Content Area */
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+        .welcome-banner { width: 100%; background: linear-gradient(135deg, #1db954, #0b6623); padding: 40px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(29,185,84,0.3); }
+        .welcome-banner h1 { font-size: 32px; margin-bottom: 10px; }
+        
+        /* Glassmorphic Player Container (Exact copy of jukebox.html shape & size) */
+        .jukebox-card { 
+            background: rgba(30, 30, 45, 0.6); 
+            backdrop-filter: blur(15px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            padding: 30px; 
+            border-radius: 24px; 
+            width: 380px; 
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); 
+            text-align: center; 
+            margin-top: 20px;
+        }
+        
+        /* Album Image Component at the top */
+        .album-wrapper { 
+            width: 100%; 
+            height: 280px; 
+            border-radius: 16px; 
+            overflow: hidden; 
+            margin-bottom: 25px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
+            background: #1a1a2e; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        .album-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .track-info { margin-bottom: 20px; }
+        .track-info h2 { font-size: 22px; font-weight: 600; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .track-info p { font-size: 14px; color: #b3b3b3; }
+        
+        /* Time & Control Elements */
+        .progress-box { margin-bottom: 25px; }
+        .slider { width: 100%; height: 6px; -webkit-appearance: none; background: #333; border-radius: 5px; outline: none; cursor: pointer; accent-color: #1db954; }
+        .timestamps { display: flex; justify-content: space-between; font-size: 12px; color: #b3b3b3; margin-top: 8px; }
+        .control-panel { display: flex; justify-content: center; align-items: center; gap: 30px; }
+        .btn { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; transition: 0.2s; }
+        .btn:hover { color: #1db954; transform: scale(1.1); }
+        
+        #play-btn { background: #fff; color: #0c0c1e; width: 60px; height: 60px; border-radius: 50%; font-size: 22px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(255,255,255,0.2); }
+        #play-btn:hover { background: #1db954; color: #fff; box-shadow: 0 4px 20px rgba(29,185,84,0.4); }
+        
+        #status-msg { font-size: 12px; color: #1db954; margin-top: 10px; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+        <div class="logo">🎵 JUKEBOX</div>
+        <ul class="nav-links">
+            <li><a href="index.html" class="active">🏠 Dashboard</a></li>
+            <li><a href="jukebox.html">📻 Player / Jukebox</a></li>
+            <li><a href="profile.html">👤 My Profile</a></li>
+            <li><a href="settings.html">⚙️ Settings</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Section -->
+    <main class="main-content">
+        <div class="welcome-banner">
+            <h1>Welcome Back, Streamer!</h1>
+            <p>Explore your personalized dashboard, choose your mood, and control your vibe.</p>
+        </div>
+
+        <!-- Re-designed Player Widget with Top Album Image (Matches jukebox.html layout) -->
+        <div class="jukebox-card">
+            <div class="album-wrapper">
+                <img id="album-art" src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=500" alt="Album Cover">
+            </div>
+            <div class="track-info">
+                <h2 id="title">Connecting to Streams...</h2>
+                <p id="artist">SantRadio Live Feed</p>
+            </div>
+            <div class="progress-box">
+                <input type="range" class="slider" id="progress" value="0" max="100">
+                <div class="timestamps">
+                    <span id="current">0:00</span>
+                    <span id="duration">0:00</span>
+                </div>
+            </div>
+            <div class="control-panel">
+                <button class="btn" id="prev-btn">⏮</button>
+                <button class="btn" id="play-btn">▶</button>
+                <button class="btn" id="next-btn">⏭</button>
+            </div>
+            <div id="status-msg">Fetching CSV entries...</div>
+            
+            <audio id="audio-player"></audio>
+        </div>
+    </main>
+
+    <!-- JS Stream integration engine linked to GitHub CSV -->
+    <script>
+        const csvUrl = 'https://cdn.jsdelivr.net/gh/sharmaje/SantRadio@main/SxVxNdb.csv';
+        
+        let playlist = [];
+        let currentTrackIndex = 0;
+
+        const audio = document.getElementById('audio-player');
+        const playBtn = document.getElementById('play-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const progress = document.getElementById('progress');
+        const currentT = document.getElementById('current');
+        const durationT = document.getElementById('duration');
+        const trackTitle = document.getElementById('title');
+        const statusMsg = document.getElementById('status-msg');
+
+        async function loadCSVPlaylist() {
+            try {
+                const response = await fetch(csvUrl);
+                if (!response.ok) throw new Error('Network structure issue');
+                const data = await response.text();
+                
+                const lines = data.split('\n');
+                playlist = [];
+
+                for (let i = 0; i < lines.length; i++) {
+                    const row = lines[i].trim();
+                    if (row) {
+                        const columns = row.split(',');
+                        let title = `Track ${i + 1}`;
+                        let url = columns[0].trim();
+
+                        if (columns.length > 1) {
+                            title = columns[0].trim().replace(/^"|"$/g, '');
+                            url = columns[1].trim().replace(/^"|"$/g, '');
+                        }
+                        
+                        if (url.includes('github.com') && url.includes('/blob/')) {
+                            url = url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+                        }
+
+                        if (url.startsWith('http')) {
+                            playlist.push({ title: title, url: url });
+                        }
+                    }
+                }
+
+                if (playlist.length > 0) {
+                    statusMsg.innerText = `Online: ${playlist.length} Tracks Ready.`;
+                    loadTrack(currentTrackIndex);
+                } else {
+                    trackTitle.innerText = "No links detected";
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                trackTitle.innerText = "Sync Error";
+            }
+        }
+
+        function loadTrack(index) {
+            if (playlist.length === 0) return;
+            currentTrackIndex = index;
+            audio.src = playlist[index].url;
+            trackTitle.innerText = playlist[index].title;
+            audio.load();
+        }
+
+        function togglePlay() {
+            if (playlist.length === 0) return;
+            if (audio.paused) {
+                audio.play().catch(() => {});
+                playBtn.innerText = '⏸';
+            } else {
+                audio.pause();
+                playBtn.innerText = '▶';
+            }
+        }
+
+        playBtn.addEventListener('click', togglePlay);
+
+        function nextTrack() {
+            if (playlist.length === 0) return;
+            currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
+            loadTrack(currentTrackIndex);
+            audio.play().catch(() => {});
+            playBtn.innerText = '⏸';
+        }
+
+        function prevTrack() {
+            if (playlist.length === 0) return;
+            currentTrackIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
+            loadTrack(currentTrackIndex);
+            audio.play().catch(() => {});
+            playBtn.innerText = '⏸';
+        }
+
+        nextBtn.addEventListener('click', nextTrack);
+        prevBtn.addEventListener('click', prevTrack);
+        audio.addEventListener('ended', nextTrack);
+
+        audio.addEventListener('timeupdate', () => {
+            if (audio.duration) {
+                progress.value = (audio.currentTime / audio.duration) * 100;
+                let mins = Math.floor(audio.currentTime / 60);
+                let secs = Math.floor(audio.currentTime % 60);
+                currentT.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+                let dmins = Math.floor(audio.duration / 60);
+                let dsecs = Math.floor(audio.duration % 60);
+                durationT.innerText = `${dmins}:${dsecs < 10 ? '0' : ''}${dsecs}`;
+            }
+        });
+
+        progress.addEventListener('input', () => {
+            if (audio.duration) {
+                audio.currentTime = (progress.value / 100) * audio.duration;
+            }
+        });
+
+        window.onload = loadCSVPlaylist;
+    </script>
+</body>
+</html>
