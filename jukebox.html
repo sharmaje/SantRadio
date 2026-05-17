@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jukebox - Live CSV Streamer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #0c0c1e; color: #fff; display: flex; min-height: 100vh; }
+        
+        /* Sidebar Navigation */
+        .sidebar { width: 250px; background: rgba(15, 15, 35, 0.9); border-right: 1px solid rgba(255,255,255,0.1); padding: 30px 20px; display: flex; flex-direction: column; gap: 30px; }
+        .logo { font-size: 24px; font-weight: bold; color: #1db954; letter-spacing: 1px; }
+        .nav-links { list-style: none; display: flex; flex-direction: column; gap: 15px; }
+        .nav-links a { color: #b3b3b3; text-decoration: none; font-size: 16px; display: flex; align-items: center; gap: 15px; padding: 10px; border-radius: 8px; transition: 0.3s; }
+        .nav-links a:hover, .nav-links a.active { color: #fff; background: rgba(29, 185, 84, 0.2); border-left: 4px solid #1db954; }
+
+        .main-content { flex: 1; padding: 40px; display: flex; justify-content: center; align-items: center; flex-direction: column; gap: 20px; }
+        
+        /* Glassmorphic Player Container */
+        .jukebox-card { background: rgba(30, 30, 45, 0.6); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); padding: 30px; border-radius: 24px; width: 380px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); text-align: center; }
+        .album-wrapper { width: 100%; height: 280px; border-radius: 16px; overflow: hidden; margin-bottom: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); background: #1a1a2e; display: flex; align-items: center; justify-content: center; }
+        .album-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .track-info { margin-bottom: 20px; }
+        .track-info h2 { font-size: 22px; font-weight: 600; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .track-info p { font-size: 14px; color: #b3b3b3; }
+        
+        /* Time & Control Elements */
+        .progress-box { margin-bottom: 25px; }
+        .slider { width: 100%; height: 6px; -webkit-appearance: none; background: #333; border-radius: 5px; outline: none; cursor: pointer; accent-color: #1db954; }
+        .timestamps { display: flex; justify-content: space-between; font-size: 12px; color: #b3b3b3; margin-top: 8px; }
+        .control-panel { display: flex; justify-content: center; align-items: center; gap: 30px; }
+        .btn { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; transition: 0.2s; }
+        .btn:hover { color: #1db954; transform: scale(1.1); }
+        
+        #play-btn { background: #fff; color: #0c0c1e; width: 60px; height: 60px; border-radius: 50%; font-size: 22px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(255,255,255,0.2); }
+        #play-btn:hover { background: #1db954; color: #fff; box-shadow: 0 4px 20px rgba(29,185,84,0.4); }
+        
+        /* Status message indicator */
+        #status-msg { font-size: 12px; color: #1db954; margin-top: 10px; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="logo">🎵 JUKEBOX</div>
+        <ul class="nav-links">
+            <li><a href="index.html">🏠 Dashboard</a></li>
+            <li><a href="jukebox.html" class="active">📻 Player / Jukebox</a></li>
+            <li><a href="profile.html">👤 My Profile</a></li>
+            <li><a href="settings.html">⚙️ Settings</a></li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <div class="jukebox-card">
+            <div class="album-wrapper">
+                <img id="album-art" src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=500" alt="Album Cover">
+            </div>
+            <div class="track-info">
+                <h2 id="title">Loading Playlist...</h2>
+                <p id="artist">SantRadio Live Feed</p>
+            </div>
+            <div class="progress-box">
+                <input type="range" class="slider" id="progress" value="0" max="100">
+                <div class="timestamps">
+                    <span id="current">0:00</span>
+                    <span id="duration">0:00</span>
+                </div>
+            </div>
+            <div class="control-panel">
+                <button class="btn" id="prev-btn">⏮</button>
+                <button class="btn" id="play-btn">▶</button>
+                <button class="btn" id="next-btn">⏭</button>
+            </div>
+            <div id="status-msg">Fetching CSV streams...</div>
+            
+            <audio id="audio-player"></audio>
+        </div>
+    </main>
+
+    <script>
+        // GitHub Raw URL configuration
+        const csvUrl = 'https://raw.githubusercontent.com/sharmaje/SantRadio/main/SxVxNdb.csv';
+        
+        let playlist = [];
+        let currentTrackIndex = 0;
+
+        const audio = document.getElementById('audio-player');
+        const playBtn = document.getElementById('play-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const progress = document.getElementById('progress');
+        const currentT = document.getElementById('current');
+        const durationT = document.getElementById('duration');
+        const trackTitle = document.getElementById('title');
+        const statusMsg = document.getElementById('status-msg');
+
+        // 1. Fetch and Parse CSV File from GitHub
+        async function loadCSVPlaylist() {
+            try {
+                const response = await fetch(csvUrl);
+                if (!response.ok) throw new Error('Network response structure issue');
+                const data = await response.text();
+                
+                // Splitting CSV rows
+                const lines = data.split('\n');
+                playlist = [];
+
+                for (let i = 1; i < lines.length; i++) { // Skipping header row
+                    const row = lines[i].trim();
+                    if (row) {
+                        // Assuming CSV format: Title, URL or just URLs. 
+                        // Hum handle kar rahe hain agar single URL column ho ya comma separated text.
+                        const columns = row.split(',');
+                        let title = `Track ${i}`;
+                        let url = columns[0].trim();
+
+                        if (columns.length > 1) {
+                            title = columns[0].trim().replace(/^"|"$/g, ''); // Remove quotes if any
+                            url = columns[1].trim().replace(/^"|"$/g, '');
+                        }
+                        
+                        // Validating stream or mp3 link extension placeholder
+                        if (url.startsWith('http')) {
+                            playlist.push({ title: title, url: url });
+                        }
+                    }
+                }
+
+                if (playlist.length > 0) {
+                    statusMsg.innerText = `Loaded ${playlist.length} tracks successfully.`;
+                    loadTrack(currentTrackIndex);
+                } else {
+                    trackTitle.innerText = "No playable audio links found";
+                    statusMsg.innerText = "Check CSV entries.";
+                }
+            } catch (error) {
+                console.error("Error loading CSV:", error);
+                trackTitle.innerText = "Failed to load playlist";
+                statusMsg.innerText = "Error syncing with GitHub repository.";
+            }
+        }
+
+        // 2. Load Track Function
+        function loadTrack(index) {
+            if (playlist.length === 0) return;
+            currentTrackIndex = index;
+            
+            audio.src = playlist[index].url;
+            trackTitle.innerText = playlist[index].title;
+            
+            progress.value = 0;
+            currentT.innerText = "0:00";
+            durationT.innerText = "0:00";
+        }
+
+        // 3. Play/Pause Controller
+        function togglePlay() {
+            if (playlist.length === 0) return;
+            if (audio.paused) {
+                audio.play().catch(err => console.log("Playback interaction trigger saved: ", err));
+                playBtn.innerText = '⏸';
+            } else {
+                audio.pause();
+                playBtn.innerText = '▶';
+            }
+        }
+
+        playBtn.addEventListener('click', togglePlay);
+
+        // 4. Next Track (Continuous Engine)
+        function nextTrack() {
+            if (playlist.length === 0) return;
+            currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
+            loadTrack(currentTrackIndex);
+            audio.play().catch(() => {});
+            playBtn.innerText = '⏸';
+        }
+
+        // 5. Previous Track
+        function prevTrack() {
+            if (playlist.length === 0) return;
+            currentTrackIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
+            loadTrack(currentTrackIndex);
+            audio.play().catch(() => {});
+            playBtn.innerText = '⏸';
+        }
+
+        nextBtn.addEventListener('click', nextTrack);
+        prevBtn.addEventListener('click', prevTrack);
+
+        // 6. Audio Ended Event Listener (Continuous loop automation)
+        audio.addEventListener('ended', () => {
+            statusMsg.innerText = "Transitioning to next continuous track...";
+            nextTrack();
+        });
+
+        // Update Progress Bar & Timestamps
+        audio.addEventListener('timeupdate', () => {
+            if (audio.duration) {
+                progress.value = (audio.currentTime / audio.duration) * 100;
+                
+                let mins = Math.floor(audio.currentTime / 60);
+                let secs = Math.floor(audio.currentTime % 60);
+                currentT.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+                let dmins = Math.floor(audio.duration / 60);
+                let dsecs = Math.floor(audio.duration % 60);
+                durationT.innerText = `${dmins}:${dsecs < 10 ? '0' : ''}${dsecs}`;
+            }
+        });
+
+        // Scrubbing interface logic
+        progress.addEventListener('input', () => {
+            if (audio.duration) {
+                audio.currentTime = (progress.value / 100) * audio.duration;
+            }
+        });
+
+        // Initialize CSV process trigger on windows load
+        window.onload = loadCSVPlaylist;
+    </script>
+</body>
+</html>
