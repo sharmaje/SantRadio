@@ -63,8 +63,7 @@
 
     <main class="main-content">
         <div class="welcome-banner">
-            <h1>SantBhajans Juke Box!</h1>
-            <p>Explore your favourite Sant Bhajans, choose your mood, and control your soul vibe.</p>
+            <h1>Jai Sant Ki!</h1>
         </div>
 
         <div class="jukebox-card">
@@ -151,7 +150,9 @@
 
                 if (playlist.length > 0) {
                     statusMsg.innerText = `Online: ${playlist.length} Tracks Ready.`;
-                    loadTrack(currentTrackIndex);
+                    // Pehla track bhi list mein se randomly select hoga
+                    const randomIndex = Math.floor(Math.random() * playlist.length);
+                    loadTrack(randomIndex);
                 } else {
                     trackTitle.innerText = "No links detected";
                     statusMsg.innerText = "Error: Playlist empty";
@@ -175,39 +176,41 @@
             if (playlist.length === 0) return;
             if (audio.paused) {
                 audio.play().then(() => {
-                    playBtn.innerText = '?';
+                    playBtn.innerText = '⏸';
                 }).catch((err) => {
                     console.log("Playback error: ", err);
                 });
             } else {
                 audio.pause();
-                playBtn.innerText = '?';
+                playBtn.innerText = '▶';
             }
         }
 
         playBtn.addEventListener('click', togglePlay);
 
-        function nextTrack() {
+        // Naya unique random track play karne ka logic
+        function playRandomTrack() {
             if (playlist.length === 0) return;
-            currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
-            loadTrack(currentTrackIndex);
+            
+            let nextIndex = currentTrackIndex;
+            // Agar playlist mein 1 se zyada gaane hain, toh check karega ki naya song pichle wale se alag ho
+            if (playlist.length > 1) {
+                while (nextIndex === currentTrackIndex) {
+                    nextIndex = Math.floor(Math.random() * playlist.length);
+                }
+            } else {
+                nextIndex = 0;
+            }
+
+            loadTrack(nextIndex);
             audio.play().then(() => {
-                playBtn.innerText = '?';
+                playBtn.innerText = '⏸';
             }).catch(() => {});
         }
 
-        function prevTrack() {
-            if (playlist.length === 0) return;
-            currentTrackIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
-            loadTrack(currentTrackIndex);
-            audio.play().then(() => {
-                playBtn.innerText = '?';
-            }).catch(() => {});
-        }
-
-        nextBtn.addEventListener('click', nextTrack);
-        prevBtn.addEventListener('click', prevTrack);
-        audio.addEventListener('ended', nextTrack);
+        nextBtn.addEventListener('click', playRandomTrack);
+        prevBtn.addEventListener('click', playRandomTrack);
+        audio.addEventListener('ended', playRandomTrack);
 
         audio.addEventListener('timeupdate', () => {
             if (audio.duration) {
