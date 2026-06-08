@@ -61,14 +61,12 @@
 </head>
 <body>
 
-    <!-- Main Section -->
     <main class="main-content">
         <div class="welcome-banner">
             <h1>Welcome Back to Sant Bhajans Juke Box!</h1>
             <p>Explore your favourite Sant Bhajans, choose your mood, and control your soul vibe.</p>
         </div>
 
-        <!-- Re-designed Player Widget with Top Album Image (Matches jukebox.html layout) -->
         <div class="jukebox-card">
             <div class="album-wrapper">
                 <img id="album-art" src="Sant Bhajans.png" alt="Album Cover">
@@ -95,7 +93,6 @@
         </div>
     </main>
 
-    <!-- JS Stream integration engine linked to GitHub CSV -->
     <script>
         const csvUrl = 'https://sharmaje.github.io/SantRadio/SxVxNdbv.csv';
         
@@ -148,10 +145,12 @@
                     loadTrack(currentTrackIndex);
                 } else {
                     trackTitle.innerText = "No links detected";
+                    statusMsg.innerText = "Error: Playlist empty";
                 }
             } catch (error) {
                 console.error("Error:", error);
                 trackTitle.innerText = "Sync Error";
+                statusMsg.innerText = "Failed to load streams";
             }
         }
 
@@ -166,8 +165,11 @@
         function togglePlay() {
             if (playlist.length === 0) return;
             if (audio.paused) {
-                audio.play().catch(() => {});
-                playBtn.innerText = '⏸';
+                audio.play().then(() => {
+                    playBtn.innerText = '⏸';
+                }).catch((err) => {
+                    console.log("Playback error: ", err);
+                });
             } else {
                 audio.pause();
                 playBtn.innerText = '▶';
@@ -180,16 +182,18 @@
             if (playlist.length === 0) return;
             currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
             loadTrack(currentTrackIndex);
-            audio.play().catch(() => {});
-            playBtn.innerText = '⏸';
+            audio.play().then(() => {
+                playBtn.innerText = '⏸';
+            }).catch(() => {});
         }
 
         function prevTrack() {
             if (playlist.length === 0) return;
             currentTrackIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
             loadTrack(currentTrackIndex);
-            audio.play().catch(() => {});
-            playBtn.innerText = '⏸';
+            audio.play().then(() => {
+                playBtn.innerText = '⏸';
+            }).catch(() => {});
         }
 
         nextBtn.addEventListener('click', nextTrack);
@@ -215,7 +219,8 @@
             }
         });
 
-        window.onload = loadCSVPlaylist;
+        // Event listener added to ensure content is parsed safely
+        document.addEventListener("DOMContentLoaded", loadCSVPlaylist);
     </script>
 </body>
 </html>
