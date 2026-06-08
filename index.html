@@ -2,217 +2,247 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Sant Bhajans Online Radio</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jukebox - Dashboard</title>
     <style>
-        body { text-align: center; font-family: 'Calibri', sans-serif; }
-        .custom-player-wrapper {
-            background: linear-gradient(135deg, #ff8300, #ffcc00);
-            color: #fff;
-            padding: 20px;
-            border-radius: 12px;
-            max-width: 450px;
-            margin: 20px auto;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-        }
-        .player-info-box {
-            margin-bottom: 15px;
-            padding: 12px;
-            background: rgba(0,0,0,0.4);
-            border-radius: 8px;
-        }
-        .player-info-box h3 {
-            margin: 0 0 8px 0;
-            font-size: 19px;
-            color: #1db954;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-        }
-        .player-info-box p {
-            margin: 4px 0;
-            font-size: 14px;
-            color: #e0e0e0;
-        }
-        .audio-element {
-            width: 100%;
-            margin-bottom: 15px;
-            border-radius: 6px;
-        }
-        .controls-box {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-        }
-        .ctrl-btn {
-            background: #ffaa00;
-            color: #000;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            flex: 1;
-            transition: all 0.3s ease;
-        }
-        .ctrl-btn:hover {
-            background: #e69500;
-            transform: translateY(-1px);
-        }
-        .counter-box {
-            background: #fdfaf0;
-            padding: 10px 20px;
-            border-radius: 50px;
-            display: inline-block;
-            border: 1px solid #d4af37;
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #0c0c1e; color: #fff; display: flex; min-height: 100vh; overflow-x: hidden; }
+
+        /* Main Content Area */
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+        .welcome-banner { width: 100%; background: linear-gradient(135deg, #1db954, #0b6623); padding: 40px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(29,185,84,0.3); }
+        .welcome-banner h1 { font-size: 32px; margin-bottom: 10px; }
+        
+        /* Glassmorphic Player Container */
+        .jukebox-card { 
+            background: rgba(30, 30, 45, 0.6); 
+            backdrop-filter: blur(15px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            padding: 30px; 
+            border-radius: 24px; 
+            width: 380px; 
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); 
+            text-align: center; 
             margin-top: 20px;
         }
+        
+        /* Album Image Component at the top */
+        .album-wrapper { 
+            width: 100%; 
+            height: 280px; 
+            border-radius: 16px; 
+            overflow: hidden; 
+            margin-bottom: 25px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
+            background: #1a1a2e; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        .album-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .track-info { margin-bottom: 20px; }
+        .track-info h2 { font-size: 22px; font-weight: 600; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .track-info p { font-size: 14px; color: #b3b3b3; }
+        
+        /* Time & Control Elements */
+        .progress-box { margin-bottom: 25px; }
+        .slider { width: 100%; height: 6px; -webkit-appearance: none; background: #333; border-radius: 5px; outline: none; cursor: pointer; accent-color: #1db954; }
+        .timestamps { display: flex; justify-content: space-between; font-size: 12px; color: #b3b3b3; margin-top: 8px; }
+        .control-panel { display: flex; justify-content: center; align-items: center; gap: 30px; }
+        .btn { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; transition: 0.2s; }
+        .btn:hover { color: #1db954; transform: scale(1.1); }
+        
+        #play-btn { background: #fff; color: #0c0c1e; width: 60px; height: 60px; border-radius: 50%; font-size: 22px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(255,255,255,0.2); }
+        #play-btn:hover { background: #1db954; color: #fff; box-shadow: 0 4px 20px rgba(29,185,84,0.4); }
+        
+        #status-msg { font-size: 12px; color: #1db954; margin-top: 10px; font-style: italic; }
     </style>
 </head>
 <body>
 
-    <h2>Sant Bhajans Jukebox</h2>
+    <main class="main-content">
+        <div class="welcome-banner">
+            <h1>Welcome Back to Sant Bhajans Juke Box!</h1>
+            <p>Explore your favourite Sant Bhajans, choose your mood, and control your soul vibe.</p>
+        </div>
 
-    <div class="custom-player-wrapper">
-        <div class="player-info-box">
-            <h3 id="bhajan-title">Bhajan Load Ho Raha Hain...</h3>
-            <p><strong>Album:</strong> <span id="album-name">--</span></p>
-            <p><strong>Developed by:</strong> <span id="developed-by">--</span></p>
+        <div class="jukebox-card">
+            <div class="album-wrapper">
+                <img id="album-art" src="Sant Bhajans.png" alt="Album Cover">
+            </div>
+            <div class="track-info">
+                <h2 id="title">Connecting to Streams...</h2>
+                <p id="artist">SantRadio Live Feed</p>
+            </div>
+            <div class="progress-box">
+                <input type="range" class="slider" id="progress" value="0" max="100">
+                <div class="timestamps">
+                    <span id="current">0:00</span>
+                    <span id="duration">0:00</span>
+                </div>
+            </div>
+            <div class="control-panel">
+                <button class="btn" id="prev-btn">?</button>
+                <button class="btn" id="play-btn">?</button>
+                <button class="btn" id="next-btn">?</button>
+            </div>
+            <div id="status-msg">Fetching Bhajans entries...</div>
+            
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 13px; color: #b3b3b3;">
+                <div id="visit-counter" style="margin-bottom: 8px; color: #1db954; font-weight: 600;">
+                    Page Visits: <span id="count-box">3061</span>
+                </div>
+                <div style="font-size: 11px; letter-spacing: 1px; color: #888;">
+                    CREDITS: <strong style="color: #fff;">DR NEEL KANTH</strong>
+                </div>
+            </div>
+            
+            <audio id="audio-player"></audio>
         </div>
-        
-        <audio class="audio-element" id="audio-player" controls controlsList="nodownload"></audio>
-
-        <div class="controls-box">
-            <button class="ctrl-btn" id="prev-btn">⏮ Change</button>
-            <button class="ctrl-btn" id="next-btn">Change ⏭</button>
-        </div>
-    </div>
-
-    <div id="status-msg">Fetching Bhajans entries...</div>
-
-    <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 13px; color: #b3b3b3;">
-        <div id="visit-counter" style="margin-bottom: 8px; color: #1db954; font-weight: 600;">
-            Page Visits: <span id="count-box">3061</span>
-        </div>
-        <div style="font-size: 11px; letter-spacing: 1px; color: #888;">
-            CREDITS: <strong style="color: #fff;">DR NEEL KANTH</strong>
-        </div>
-    </div>
-    
-    <font face="Calibri">Maintained by: <u><b>Sant NenuRam Aashram</b></u></font>    
-    <div style="text-align: center; margin-top: 10px;">
-        <div style="background: #333; color: #fff; display: inline-block; padding: 5px 15px; border-radius: 5px; font-weight: bold;">
-            <a href="https://www.hitwebcounter.com" target="_blank" style="color: white; text-decoration: none;">VISITOR COUNTER</a>
-            <p style="font-size: 11px; color: #ccc; margin: 5px 0 0 0;">Total Blessed Listeners</p>
-        </div>
-    </div>
+    </main>
 
     <script>
-        const csvUrl = 'SxVxNdb.csv'; 
+        const csvUrl = 'https://sharmaje.github.io/SantRadio/SxVxNdbv.csv';
+        
         let playlist = [];
         let currentTrackIndex = 0;
 
-        const audioPlayer = document.getElementById('audio-player');
-        const bhajanTitle = document.getElementById('bhajan-title');
-        const albumName = document.getElementById('album-name');
-        const developedBy = document.getElementById('developed-by');
+        const audio = document.getElementById('audio-player');
+        const playBtn = document.getElementById('play-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const progress = document.getElementById('progress');
+        const currentT = document.getElementById('current');
+        const durationT = document.getElementById('duration');
+        const trackTitle = document.getElementById('title');
         const statusMsg = document.getElementById('status-msg');
 
-        async function loadPlaylist() {
+        async function loadCSVPlaylist() {
             try {
                 const response = await fetch(csvUrl);
+                if (!response.ok) throw new Error('Network structure issue');
                 const data = await response.text();
-                const rows = data.split('\n');
                 
+                const lines = data.split('\n');
                 playlist = [];
-                for (let i = 1; i < rows.length; i++) {
-                    if (rows[i].trim() === '') continue;
-                    const cols = rows[i].split(',');
-                    if (cols.length >= 4) {
-                        playlist.push({
-                            title: cols[0].trim(),
-                            playLink: cols[1].trim(),
-                            album: cols[2].trim(),
-                            developer: cols[3].trim()
-                        });
+
+                for (let i = 0; i < lines.length; i++) {
+                    const row = lines[i].trim();
+                    if (row) {
+                        const columns = row.split(',');
+                        let title = `Track ${i + 1}`;
+                        let url = columns[0].trim();
+
+                        if (columns.length > 1) {
+                            title = columns[0].trim().replace(/^"|"$/g, '');
+                            url = columns[1].trim().replace(/^"|"$/g, '');
+                        }
+                        
+                        if (url.includes('github.com') && url.includes('/blob/')) {
+                            url = url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+                        }
+
+                        if (url.startsWith('http')) {
+                            playlist.push({ title: title, url: url });
+                        }
                     }
                 }
 
                 if (playlist.length > 0) {
-                    if(statusMsg) statusMsg.innerText = `Online: ${playlist.length} Tracks Ready.`;
-                    currentTrackIndex = Math.floor(Math.random() * playlist.length);
-                    playTrack(currentTrackIndex);
+                    statusMsg.innerText = `Online: ${playlist.length} Tracks Ready.`;
+                    loadTrack(currentTrackIndex);
                 } else {
-                    bhajanTitle.innerText = "No Bhajans Found!";
-                    if(statusMsg) statusMsg.innerText = "Error: Playlist empty";
+                    trackTitle.innerText = "No links detected";
+                    statusMsg.innerText = "Error: Playlist empty";
                 }
             } catch (error) {
-                console.error("Error loading CSV:", error);
-                bhajanTitle.innerText = "Error loading playlist.";
-                if(statusMsg) statusMsg.innerText = "Failed to load streams";
+                console.error("Error:", error);
+                trackTitle.innerText = "Sync Error";
+                statusMsg.innerText = "Failed to load streams";
             }
         }
 
-        function playTrack(index) {
+        function loadTrack(index) {
             if (playlist.length === 0) return;
-            const track = playlist[index];
-            
-            bhajanTitle.innerText = track.title;
-            albumName.innerText = track.album;
-            developedBy.innerText = track.developer;
-            
-            audioPlayer.src = track.playLink;
-            audioPlayer.load();
-            
-            const playPromise = audioPlayer.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(error => {
-                    console.log("Autoplay blocked. Please click play manually.");
+            currentTrackIndex = index;
+            audio.src = playlist[index].url;
+            trackTitle.innerText = playlist[index].title;
+            audio.load();
+        }
+
+        function togglePlay() {
+            if (playlist.length === 0) return;
+            if (audio.paused) {
+                audio.play().then(() => {
+                    playBtn.innerText = '?';
+                }).catch((err) => {
+                    console.log("Playback error: ", err);
                 });
+            } else {
+                audio.pause();
+                playBtn.innerText = '?';
             }
         }
 
-        audioPlayer.onended = function() {
-            nextTrack();
-        };
-
-        document.getElementById('prev-btn').addEventListener('click', () => {
-            currentTrackIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
-            playTrack(currentTrackIndex);
-        });
-
-        document.getElementById('next-btn').addEventListener('click', () => {
-            nextTrack();
-        });
+        playBtn.addEventListener('click', togglePlay);
 
         function nextTrack() {
-            let nextIndex;
-            do {
-                nextIndex = Math.floor(Math.random() * playlist.length);
-            } while (nextIndex === currentTrackIndex && playlist.length > 1);
-            
-            currentTrackIndex = nextIndex;
-            playTrack(currentTrackIndex);
+            if (playlist.length === 0) return;
+            currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
+            loadTrack(currentTrackIndex);
+            audio.play().then(() => {
+                playBtn.innerText = '?';
+            }).catch(() => {});
         }
 
-        // Visit Counter Logic
+        function prevTrack() {
+            if (playlist.length === 0) return;
+            currentTrackIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
+            loadTrack(currentTrackIndex);
+            audio.play().then(() => {
+                playBtn.innerText = '?';
+            }).catch(() => {});
+        }
+
+        nextBtn.addEventListener('click', nextTrack);
+        prevBtn.addEventListener('click', prevTrack);
+        audio.addEventListener('ended', nextTrack);
+
+        audio.addEventListener('timeupdate', () => {
+            if (audio.duration) {
+                progress.value = (audio.currentTime / audio.duration) * 100;
+                let mins = Math.floor(audio.currentTime / 60);
+                let secs = Math.floor(audio.currentTime % 60);
+                currentT.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+                let dmins = Math.floor(audio.duration / 60);
+                let dsecs = Math.floor(audio.duration % 60);
+                durationT.innerText = `${dmins}:${dsecs < 10 ? '0' : ''}${dsecs}`;
+            }
+        });
+
+        progress.addEventListener('input', () => {
+            if (audio.duration) {
+                audio.currentTime = (progress.value / 100) * audio.duration;
+            }
+        });
+
+        // Visit Counter Engine
         function updateVisitCounter() {
             let visits = localStorage.getItem('jukebox_visits');
-            
             if (!visits) {
                 visits = 3061;
             } else {
                 visits = parseInt(visits) + 1;
             }
-            
             localStorage.setItem('jukebox_visits', visits);
-            const countBox = document.getElementById('count-box');
-            if (countBox) countBox.innerText = visits;
+            document.getElementById('count-box').innerText = visits;
         }
 
-        // Execution of functions safely inside script
+        // Run both playlist and counter on load
         document.addEventListener("DOMContentLoaded", () => {
-            loadPlaylist();
+            loadCSVPlaylist();
             updateVisitCounter();
         });
     </script>
