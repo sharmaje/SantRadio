@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>Sant Bhajans Online Radio</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!--[if lte IE 8]><script src="assets/js/html5shiv.js"></script><![endif]-->
     <noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
     
     <style>
@@ -84,22 +83,22 @@
         <audio class="audio-element" id="audio-player" controls controlsList="nodownload"></audio>
 
         <div class="controls-box">
-            <!-- ID fixed here to 'prev-btn' -->
             <button class="ctrl-btn" id="prev-btn">⏮ Change</button>
             <button class="ctrl-btn" id="next-btn">Change ⏭</button>
         </div>
     </div>
 
-   <div id="status-msg">Fetching Bhajans entries...</div>
+    <div id="status-msg">Fetching Bhajans entries...</div>
 
-<div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 13px; color: #b3b3b3;">
-    <div id="visit-counter" style="margin-bottom: 8px; color: #1db954; font-weight: 600;">
-        Page Visits: <span id="count-box">3061</span>
+    <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 13px; color: #b3b3b3;">
+        <div id="visit-counter" style="margin-bottom: 8px; color: #1db954; font-weight: 600;">
+            Page Visits: <span id="count-box">3061</span>
+        </div>
+        <div style="font-size: 11px; letter-spacing: 1px; color: #888;">
+            CREDITS: <strong style="color: #fff;">DR NEEL KANTH</strong>
+        </div>
     </div>
-    <div style="font-size: 11px; letter-spacing: 1px; color: #888;">
-        CREDITS: <strong style="color: #fff;">DR NEEL KANTH</strong>
-    </div>
-</div>
+    
     <font face="Calibri">Maintained by: <u><b>Sant NenuRam Aashram</b></u></font>    
     <div style="text-align: center; margin-top: 10px;">
         <div style="background: #333; color: #fff; display: inline-block; padding: 5px 15px; border-radius: 5px; font-weight: bold;">
@@ -117,6 +116,7 @@
         const bhajanTitle = document.getElementById('bhajan-title');
         const albumName = document.getElementById('album-name');
         const developedBy = document.getElementById('developed-by');
+        const statusMsg = document.getElementById('status-msg');
 
         async function loadPlaylist() {
             try {
@@ -139,14 +139,17 @@
                 }
 
                 if (playlist.length > 0) {
+                    if(statusMsg) statusMsg.innerText = `Online: ${playlist.length} Tracks Ready.`;
                     currentTrackIndex = Math.floor(Math.random() * playlist.length);
                     playTrack(currentTrackIndex);
                 } else {
                     bhajanTitle.innerText = "No Bhajans Found!";
+                    if(statusMsg) statusMsg.innerText = "Error: Playlist empty";
                 }
             } catch (error) {
                 console.error("Error loading CSV:", error);
                 bhajanTitle.innerText = "Error loading playlist.";
+                if(statusMsg) statusMsg.innerText = "Failed to load streams";
             }
         }
 
@@ -183,7 +186,6 @@
         });
 
         function nextTrack() {
-            // Random track selection
             let nextIndex;
             do {
                 nextIndex = Math.floor(Math.random() * playlist.length);
@@ -193,8 +195,26 @@
             playTrack(currentTrackIndex);
         }
 
-        loadPlaylist();
+        // Visit Counter Logic
+        function updateVisitCounter() {
+            let visits = localStorage.getItem('jukebox_visits');
+            
+            if (!visits) {
+                visits = 3061;
+            } else {
+                visits = parseInt(visits) + 1;
+            }
+            
+            localStorage.setItem('jukebox_visits', visits);
+            const countBox = document.getElementById('count-box');
+            if (countBox) countBox.innerText = visits;
+        }
+
+        // Execution of functions safely inside script
+        document.addEventListener("DOMContentLoaded", () => {
+            loadPlaylist();
+            updateVisitCounter();
+        });
     </script>
-    
-    </body>
+</body>
 </html>
