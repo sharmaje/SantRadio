@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SantBhajans - Jukebox</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #fff; color: #0c0c1e; display: flex; min-height: 100vh; overflow-x: hidden; }
+
+        /* Main Content Area */
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+        .welcome-banner { width: 100%; background: linear-gradient(135deg, #1db954, #0b6623); padding: 40px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(29,185,84,0.3); }
+        .welcome-banner h1 { font-size: 32px; margin-bottom: 10px; }
+        
+        /* Glassmorphic Player Container */
+        .jukebox-card { 
+            background: rgba(30, 30, 45, 0.6); 
+            backdrop-filter: blur(15px); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            padding: 30px; 
+            border-radius: 24px; 
+            width: 380px; 
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); 
+            text-align: center; 
+            margin-top: 20px;
+        }
+        
+        /* Album Image Component at the top */
+        .album-wrapper { 
+            width: 100%; 
+            height: 280px; 
+            border-radius: 16px; 
+            overflow: hidden; 
+            margin-bottom: 25px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
+            background: #1a1a2e; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        .album-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .track-info { margin-bottom: 20px; }
+        .track-info h2 { font-size: 22px; font-weight: 600; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .track-info p { font-size: 14px; color: #b3b3b3; margin-bottom: 4px; }
+        .track-info .meta-info { font-size: 12px; color: #1db954; font-weight: 500; }
+        
+        /* Time & Control Elements */
+        .progress-box { margin-bottom: 25px; }
+        .slider { width: 100%; height: 6px; -webkit-appearance: none; background: #333; border-radius: 5px; outline: none; cursor: pointer; accent-color: #1db954; }
+        .timestamps { display: flex; justify-content: space-between; font-size: 12px; color: #b3b3b3; margin-top: 8px; }
+        .control-panel { display: flex; justify-content: center; align-items: center; gap: 30px; }
+        .btn { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; transition: 0.2s; }
+        .btn:hover { color: #1db954; transform: scale(1.1); }
+        
+        #play-btn { background: #fff; color: #0c0c1e; width: 60px; height: 60px; border-radius: 50%; font-size: 22px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 15px rgba(255,255,255,0.2); }
+        #play-btn:hover { background: #1db954; color: #fff; box-shadow: 0 4px 20px rgba(29,185,84,0.4); }
+        
+        #status-msg { font-size: 12px; color: #1db954; margin-top: 10px; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <main class="main-content">
+        <div class="welcome-banner">
+            <h2>Jai Sant Ki</h2>
+        </div>
+
+        <div class="jukebox-card">
+            <div class="album-wrapper">
+                <img id="album-art" src="Sant Bhajans.png" alt="Album Cover">
+            </div>
+            <div class="track-info">
+                <h2 id="title">Connecting to Streams...</h2>
+                <p id="artist">SantRadio Live Feed</p>
+                <p id="album-name" style="color: #e0e0e0; font-style: italic;"></p>
+                <div id="maintained-by" class="meta-info"></div>
+            </div>
+            <div class="progress-box">
+                <input type="range" class="slider" id="progress" value="0" max="100">
+                <div class="timestamps">
+                    <span id="current">0:00</span>
+                    <span id="duration">0:00</span>
+                </div>
+            </div>
+            <div class="control-panel">
+                <button class="btn" id="prev-btn">⏮</button>
+                <button class="btn" id="play-btn">▶</button>
+                <button class="btn" id="next-btn">⏭</button>
+            </div>
+            <div id="status-msg">Fetching Bhajans entries...</div>
+            
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 13px; color: #b3b3b3;">
+                <div id="visit-counter" style="margin-bottom: 8px; color: #1db954; font-weight: 600;">
+                    Page Visits: <span id="count-box">3061</span>
+                </div>
+                <div style="font-size: 11px; letter-spacing: 1px; color: #888;">
+                    CREDITS: <strong style="color: #fff;">DR NEEL KANTH</strong>
+                </div>
+            </div>
+            
+            <audio id="audio-player"></audio>
+        </div>
+    </main>
+
+    <script>
+        const csvUrl = 'https://sharmaje.github.io/SantRadio/SxVxNdbv.csv';
+        const defaultAlbumArt = 'Sant Bhajans.png';
+        
+        let playlist = [];
+        let currentTrackIndex = 0;
+
+        const audio = document.getElementById('audio-player');
+        const playBtn = document.getElementById('play-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const progress = document.getElementById('progress');
+        const currentT = document.getElementById('current');
+        const durationT = document.getElementById('duration');
+        const trackTitle = document.getElementById('title');
+        const albumNameEl = document.getElementById('album-name');
+        const maintainedByEl = document.getElementById('maintained-by');
+        const albumArtImg = document.getElementById('album-art');
+        const statusMsg = document.getElementById('status-msg');
+
+        async function loadCSVPlaylist() {
+            try {
+                const response = await fetch(csvUrl);
+                if (!response.ok) throw new Error('Network structure issue');
+                const data = await response.text();
+                
+                const lines = data.split('\n');
+                playlist = [];
+
+                for (let i = 0; i < lines.length; i++) {
+                    const row = lines[i].trim();
+                    if (row) {
+                        // Regex built to handle commas inside quotes safely
+                        const columns = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || row.split(',');
+                        
+                        if (columns.length > 1) {
+                            let title = columns[0].trim().replace(/^"|"$/g, '');
+                            let url = columns[1].trim().replace(/^"|"$/g, '');
+                            let album = columns[2] ? columns[2].trim().replace(/^"|"$/g, '') : '';
+                            let maintainedBy = columns[3] ? columns[3].trim().replace(/^"|"$/g, '') : '';
+                            let albumArt = columns[4] ? columns[4].trim().replace(/^"|"$/g, '') : '';
+
+                            if (url.includes('github.com') && url.includes('/blob/')) {
+                                url = url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+                            }
+
+                            if (url.startsWith('http')) {
+                                playlist.push({ 
+                                    title: title, 
+                                    url: url, 
+                                    album: album, 
+                                    maintainedBy: maintainedBy, 
+                                    albumArt: albumArt 
+                                });
+                            }
+                        }
+                    }
+                }
+
+                if (playlist.length > 0) {
+                    statusMsg.innerText = `Online: ${playlist.length} Tracks Ready.`;
+                    const randomIndex = Math.floor(Math.random() * playlist.length);
+                    loadTrack(randomIndex);
+                } else {
+                    trackTitle.innerText = "No links detected";
+                    statusMsg.innerText = "Error: Playlist empty";
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                trackTitle.innerText = "Sync Error";
+                statusMsg.innerText = "Failed to load streams";
+            }
+        }
+
+        function loadTrack(index) {
+            if (playlist.length === 0) return;
+            currentTrackIndex = index;
+            const track = playlist[index];
+            
+            audio.src = track.url;
+            trackTitle.innerText = track.title;
+            
+            // Album Name update
+            albumNameEl.innerText = track.album ? `Album: ${track.album}` : '';
+            
+            // Maintained By update
+            maintainedByEl.innerText = track.maintainedBy ? `Maintained by: ${track.maintainedBy}` : '';
+            
+            // Album Art condition check
+            if (track.albumArt && track.albumArt.startsWith('http')) {
+                albumArtImg.src = track.albumArt;
+            } else {
+                albumArtImg.src = defaultAlbumArt;
+            }
+            
+            audio.load();
+        }
+
+        function togglePlay() {
+            if (playlist.length === 0) return;
+            if (audio.paused) {
+                audio.play().then(() => {
+                    playBtn.innerText = '⏸';
+                }).catch((err) => {
+                    console.log("Playback error: ", err);
+                });
+            } else {
+                audio.pause();
+                playBtn.innerText = '▶';
+            }
+        }
+
+        playBtn.addEventListener('click', togglePlay);
+
+        function playRandomTrack() {
+            if (playlist.length === 0) return;
+            
+            let nextIndex = currentTrackIndex;
+            if (playlist.length > 1) {
+                while (nextIndex === currentTrackIndex) {
+                    nextIndex = Math.floor(Math.random() * playlist.length);
+                }
+            } else {
+                nextIndex = 0;
+            }
+
+            loadTrack(nextIndex);
+            audio.play().then(() => {
+                playBtn.innerText = '⏸';
+            }).catch(() => {});
+        }
+
+        nextBtn.addEventListener('click', playRandomTrack);
+        prevBtn.addEventListener('click', playRandomTrack);
+        audio.addEventListener('ended', playRandomTrack);
+
+        audio.addEventListener('timeupdate', () => {
+            if (audio.duration) {
+                progress.value = (audio.currentTime / audio.duration) * 100;
+                let mins = Math.floor(audio.currentTime / 60);
+                let secs = Math.floor(audio.currentTime % 60);
+                currentT.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+                let dmins = Math.floor(audio.duration / 60);
+                let dsecs = Math.floor(audio.duration % 60);
+                durationT.innerText = `${dmins}:${dsecs < 10 ? '0' : ''}${dsecs}`;
+            }
+        });
+
+        progress.addEventListener('input', () => {
+            if (audio.duration) {
+                audio.currentTime = (progress.value / 100) * audio.duration;
+            }
+        });
+
+        function updateVisitCounter() {
+            let visits = localStorage.getItem('jukebox_visits');
+            if (!visits) {
+                visits = 3061;
+            } else {
+                visits = parseInt(visits) + 1;
+            }
+            localStorage.setItem('jukebox_visits', visits);
+            document.getElementById('count-box').innerText = visits;
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadCSVPlaylist();
+            updateVisitCounter();
+        });
+    </script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7712932441721616" crossorigin="anonymous"></script>
+<ins class="adsbygoogle" style="display: block;" data-ad-format="autorelaxed" data-ad-client="ca-pub-7712932441721616" data-ad-slot="3233616698"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+</body>
+</html>
+
