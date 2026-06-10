@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -42,8 +43,9 @@
         .album-wrapper img { width: 100%; height: 100%; object-fit: cover; }
         
         .track-info { margin-bottom: 20px; }
-        .track-info h2 { font-size: 22px; font-weight: 600; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .track-info p { font-size: 14px; color: #b3b3b3; }
+        .track-info h2 { font-size: 22px; font-weight: 600; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
+        .track-info p { font-size: 14px; color: #b3b3b3; margin-bottom: 4px; }
+        .track-info .meta-info { font-size: 12px; color: #1db954; font-style: italic; }
         
         /* Time & Control Elements */
         .progress-box { margin-bottom: 25px; }
@@ -73,6 +75,8 @@
             <div class="track-info">
                 <h2 id="title">Connecting to Streams...</h2>
                 <p id="artist">SantRadio Live Feed</p>
+                <p id="album-display" style="color: #e0e0e0; font-weight: 500;"></p>
+                <p id="maintained-display" class="meta-info"></p>
             </div>
             <div class="progress-box">
                 <input type="range" class="slider" id="progress" value="0" max="100">
@@ -115,7 +119,12 @@
         const currentT = document.getElementById('current');
         const durationT = document.getElementById('duration');
         const trackTitle = document.getElementById('title');
+        const albumDisplay = document.getElementById('album-display');
+        const maintainedDisplay = document.getElementById('maintained-display');
+        const albumArtImg = document.getElementById('album-art');
         const statusMsg = document.getElementById('status-msg');
+
+        const defaultAlbumArt = 'Sant Bhajans.png';
 
         async function loadCSVPlaylist() {
             try {
@@ -132,10 +141,22 @@
                         const columns = row.split(',');
                         let title = `Track ${i + 1}`;
                         let url = columns[0].trim();
+                        let album = '';
+                        let maintainedBy = '';
+                        let albumArt = '';
 
                         if (columns.length > 1) {
                             title = columns[0].trim().replace(/^"|"$/g, '');
                             url = columns[1].trim().replace(/^"|"$/g, '');
+                        }
+                        if (columns.length > 2) {
+                            album = columns[2].trim().replace(/^"|"$/g, '');
+                        }
+                        if (columns.length > 3) {
+                            maintainedBy = columns[3].trim().replace(/^"|"$/g, '');
+                        }
+                        if (columns.length > 4) {
+                            albumArt = columns[4].trim().replace(/^"|"$/g, '');
                         }
                         
                         if (url.includes('github.com') && url.includes('/blob/')) {
@@ -143,14 +164,19 @@
                         }
 
                         if (url.startsWith('http')) {
-                            playlist.push({ title: title, url: url });
+                            playlist.push({ 
+                                title: title, 
+                                url: url, 
+                                album: album, 
+                                maintainedBy: maintainedBy, 
+                                albumArt: albumArt 
+                            });
                         }
                     }
                 }
 
                 if (playlist.length > 0) {
                     statusMsg.innerText = `Online: ${playlist.length} Tracks Ready.`;
-                    // Pehla track bhi list mein se randomly select hoga
                     const randomIndex = Math.floor(Math.random() * playlist.length);
                     loadTrack(randomIndex);
                 } else {
@@ -167,8 +193,24 @@
         function loadTrack(index) {
             if (playlist.length === 0) return;
             currentTrackIndex = index;
-            audio.src = playlist[index].url;
-            trackTitle.innerText = playlist[index].title;
+            const track = playlist[index];
+            
+            audio.src = track.url;
+            trackTitle.innerText = track.title;
+            
+            // Show Album Name if available
+            albumDisplay.innerText = track.album ? "Album: " + track.album : "";
+            
+            // Show Maintained By if available
+            maintainedDisplay.innerText = track.maintainedBy ? "Maintained by: " + track.maintainedBy : "";
+            
+            // Show Album Art or Fallback to Default
+            if (track.albumArt && track.albumArt.startsWith('http')) {
+                albumArtImg.src = track.albumArt;
+            } else {
+                albumArtImg.src = defaultAlbumArt;
+            }
+            
             audio.load();
         }
 
@@ -188,12 +230,10 @@
 
         playBtn.addEventListener('click', togglePlay);
 
-        // Naya unique random track play karne ka logic
         function playRandomTrack() {
             if (playlist.length === 0) return;
             
             let nextIndex = currentTrackIndex;
-            // Agar playlist mein 1 se zyada gaane hain, toh check karega ki naya song pichle wale se alag ho
             if (playlist.length > 1) {
                 while (nextIndex === currentTrackIndex) {
                     nextIndex = Math.floor(Math.random() * playlist.length);
@@ -231,7 +271,6 @@
             }
         });
 
-        // Visit Counter Engine
         function updateVisitCounter() {
             let visits = localStorage.getItem('jukebox_visits');
             if (!visits) {
@@ -243,16 +282,11 @@
             document.getElementById('count-box').innerText = visits;
         }
 
-        // Run both playlist and counter on load
         document.addEventListener("DOMContentLoaded", () => {
             loadCSVPlaylist();
             updateVisitCounter();
         });
     </script>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7712932441721616" crossorigin="anonymous"></script>
-<ins class="adsbygoogle" style="display: block;" data-ad-format="autorelaxed" data-ad-client="ca-pub-7712932441721616" data-ad-slot="3233616698"></ins>
-<script>
-     (adsbygoogle = window.adsbygoogle || []).push({});
-</script>
+    
 </body>
 </html>
